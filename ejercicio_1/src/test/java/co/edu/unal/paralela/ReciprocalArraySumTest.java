@@ -5,6 +5,14 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 public class ReciprocalArraySumTest extends TestCase {
+    // ANSI color codes para impresión en terminal
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+
     // Número de veces que se debe repetir cada prueba para dar consistencia de los resultados de en el tiempo.
     final static private int REPEATS = 60;
 
@@ -80,13 +88,13 @@ public class ReciprocalArraySumTest extends TestCase {
         /*
          * Ejecuta varias repeticiones de la versiones secuncial y paralela para obtener una medida más exacta del desempeño paralelo.
          */
-        final long seqStartTime = System.currentTimeMillis();
+        final long seqStartTime = System.nanoTime();
         for (int r = 0; r < REPEATS; r++) {
             seqArraySum(input);
         }
-        final long seqEndTime = System.currentTimeMillis();
+        final long seqEndTime = System.nanoTime();
 
-        final long parStartTime = System.currentTimeMillis();
+        final long parStartTime = System.nanoTime();
         for (int r = 0; r < REPEATS; r++) {
             if (useManyTaskVersion) {
                 ReciprocalArraySum.parManyTaskArraySum(input, ntasks);
@@ -95,22 +103,33 @@ public class ReciprocalArraySumTest extends TestCase {
                 ReciprocalArraySum.parArraySum(input);
             }
         }
-        final long parEndTime = System.currentTimeMillis();
+        final long parEndTime = System.nanoTime();
 
-        final long seqTime = (seqEndTime - seqStartTime) / REPEATS;
-        final long parTime = (parEndTime - parStartTime) / REPEATS;
+        final double seqTime = (double)(seqEndTime - seqStartTime) / REPEATS;
+        final double parTime = (double)(parEndTime - parStartTime) / REPEATS;
 
-        return (double)seqTime / (double)parTime;
+        return seqTime / parTime;
     }
 
     /**
      * Prueba que la implementación de dos tareas en paralelo calcula correctamente los resultados para arreglos con un millón de elementos.
      */
     public void testParSimpleTwoMillion() {
+        System.out.println(ANSI_CYAN + "\n=========================================================================" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "▶ EJECUTANDO PRUEBA 1: Paralelismo Simple (2 tareas) - 2 Millones de elementos" + ANSI_RESET);
+
         final double minimalExpectedSpeedup = 1.5;
         final double speedup = parTestHelper(2_000_000, false, 2);
         final String errMsg = String.format("Se esperaba que la implementación de dos tareas en paralelo pudiera ejecutarse " +
                 " %fx veces más rápido, pero solo alcanzo a mejorar la rapidez (speedup) %fx veces", minimalExpectedSpeedup, speedup);
+        
+        if (speedup >= minimalExpectedSpeedup) {
+            System.out.println(ANSI_GREEN + "   ✅ PRUEBA EXITOSA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + minimalExpectedSpeedup + "x)" + ANSI_RESET);
+        } else {
+            System.out.println(ANSI_RED + "   ❌ PRUEBA FALLIDA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + minimalExpectedSpeedup + "x)" + ANSI_RESET);
+        }
+
+        System.out.println(ANSI_CYAN + "=========================================================================\n" + ANSI_RESET);
         assertTrue(errMsg, speedup >= minimalExpectedSpeedup);
     }
 
@@ -118,10 +137,21 @@ public class ReciprocalArraySumTest extends TestCase {
      * Prueba que la implementación de dos tareas en paralelo calcula correctamente los resultados para arreglos con cientos de millones de elementos..
      */
     public void testParSimpleTwoHundredMillion() {
+        System.out.println(ANSI_CYAN + "\n=========================================================================" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "▶ EJECUTANDO PRUEBA 2: Paralelismo Simple (2 tareas) - 200 Millones de elementos" + ANSI_RESET);
+
         final double speedup = parTestHelper(200_000_000, false, 2);
         final double minimalExpectedSpeedup = 1.5;
         final String errMsg = String.format("Se esperaba que la implementación de dos tareas en paralelo pudiera ejecutarse " +
                 "%fx veces más rápido, pero solo alcanzo a mejorar la rapidez (speedup) %fx veces", minimalExpectedSpeedup, speedup);
+        
+        if (speedup >= minimalExpectedSpeedup) {
+            System.out.println(ANSI_GREEN + "   ✅ PRUEBA EXITOSA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + minimalExpectedSpeedup + "x)" + ANSI_RESET);
+        } else {
+            System.out.println(ANSI_RED + "   ❌ PRUEBA FALLIDA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + minimalExpectedSpeedup + "x)" + ANSI_RESET);
+        }
+
+        System.out.println(ANSI_CYAN + "=========================================================================\n" + ANSI_RESET);
         assertTrue(errMsg, speedup >= minimalExpectedSpeedup);
     }
 
@@ -129,11 +159,24 @@ public class ReciprocalArraySumTest extends TestCase {
      * Prueba que la implementación de muchas tareas en paralelo calcula correctamente los resultados para arreglos con un millónde elementos.
      */
     public void testParManyTaskTwoMillion() {
+        System.out.println(ANSI_CYAN + "\n=========================================================================" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "▶ EJECUTANDO PRUEBA 3: Paralelismo Múltiple (Muchas tareas) - 2 Millones de elementos" + ANSI_RESET);
+
         final int ncores = getNCores();
+        System.out.println(ANSI_YELLOW + "   [*] Utilizando " + ncores + " núcleos detectados en el sistema" + ANSI_RESET);
+        
         final double minimalExpectedSpeedup = (double)ncores * 0.6;
         final double speedup = parTestHelper(2_000_000, true, ncores);
         final String errMsg = String.format("Se esperaba que la implmentación de muchas tareas en paralelo pudiera ejecutarse " +
                 "%fx veces más rápido, pero solo alcanzo a mejorar la rapidez (speedup) %fx veces", minimalExpectedSpeedup, speedup);
+        
+        if (speedup >= minimalExpectedSpeedup) {
+            System.out.println(ANSI_GREEN + "   ✅ PRUEBA EXITOSA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + String.format("%.2f", minimalExpectedSpeedup) + "x)" + ANSI_RESET);
+        } else {
+            System.out.println(ANSI_RED + "   ❌ PRUEBA FALLIDA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + String.format("%.2f", minimalExpectedSpeedup) + "x)" + ANSI_RESET);
+        }
+
+        System.out.println(ANSI_CYAN + "=========================================================================\n" + ANSI_RESET);
         assertTrue(errMsg, speedup >= minimalExpectedSpeedup);
     }
 
@@ -141,11 +184,24 @@ public class ReciprocalArraySumTest extends TestCase {
      * Prueba que la implementación de muchas tareas en paralelo calcula correctamente los resultados para arreglos con cientos de millones de elementos.
      */
     public void testParManyTaskTwoHundredMillion() {
+        System.out.println(ANSI_CYAN + "\n=========================================================================" + ANSI_RESET);
+        System.out.println(ANSI_BLUE + "▶ EJECUTANDO PRUEBA 4: Paralelismo Múltiple (Muchas tareas) - 200 Millones de elementos" + ANSI_RESET);
+
         final int ncores = getNCores();
+        System.out.println(ANSI_YELLOW + "   [*] Utilizando " + ncores + " núcleos detectados en el sistema" + ANSI_RESET);
+
         final double speedup = parTestHelper(200_000_000, true, ncores);
         final double minimalExpectedSpeedup = (double)ncores * 0.8;
         final String errMsg = String.format("Se esperaba que la implmentación de muchas tareas en paralelo pudiera ejecutarse " +
                 " %fx veces más rápido, pero solo alcanzo a mejorar la rapidez (speedup) %fx veces", minimalExpectedSpeedup, speedup);
+        
+        if (speedup >= minimalExpectedSpeedup) {
+            System.out.println(ANSI_GREEN + "   ✅ PRUEBA EXITOSA: Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + String.format("%.2f", minimalExpectedSpeedup) + "x)" + ANSI_RESET);
+        } else {
+            System.out.println(ANSI_RED + "   ❌ PRUEBA FALLIDA (LIMITACIÓN DE HARDWARE): Speedup = " + String.format("%.2f", speedup) + "x (Esperado: >=" + String.format("%.2f", minimalExpectedSpeedup) + "x)" + ANSI_RESET);
+        }
+
+        System.out.println(ANSI_CYAN + "=========================================================================\n" + ANSI_RESET);
         assertTrue(errMsg, speedup >= minimalExpectedSpeedup);
     }
 }
